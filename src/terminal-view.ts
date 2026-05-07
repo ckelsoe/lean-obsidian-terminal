@@ -134,6 +134,10 @@ export class TerminalView extends ItemView {
     this.tabManager?.updateCopyOnSelect();
   }
 
+  updateLineHeight(): void {
+    this.tabManager?.updateLineHeight();
+  }
+
   applyTabBarPosition(): void {
     if (!this.viewContainer) return;
     this.viewContainer.removeClass("terminal-tabs-left");

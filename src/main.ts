@@ -396,4 +396,11 @@ export default class TerminalPlugin extends Plugin {
       (leaf.view as TerminalView).getTabManager()?.updateTheme();
     }
   }
+
+  updateLineHeight(): void {
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_TERMINAL);
+    for (const leaf of leaves) {
+      (leaf.view as TerminalView).updateLineHeight();
+    }
+  }
 }

@@ -406,6 +406,7 @@ export class TerminalTabManager {
     const terminal = new Terminal({
       fontSize: this.settings.fontSize,
       fontFamily: this.settings.fontFamily,
+      lineHeight: this.settings.lineHeight,
       cursorBlink: this.settings.cursorBlink,
       scrollback: this.settings.scrollback,
       theme: resolveSessionTheme(
@@ -1042,6 +1043,12 @@ export class TerminalTabManager {
 
   updateCopyOnSelect(): void {
     // no-op: onSelectionChange listeners read this.settings.copyOnSelect at call time
+  }
+
+  updateLineHeight(): void {
+    for (const session of this.sessions) {
+      session.terminal.options.lineHeight = this.settings.lineHeight;
+    }
   }
 
   private renderTabBar(): void {

@@ -24,6 +24,7 @@ export interface TerminalPluginSettings {
   startupCommand: string;
   fontSize: number;
   fontFamily: string;
+  lineHeight: number;
   theme: string;
   backgroundColor: string;
   cursorBlink: boolean;
@@ -56,6 +57,7 @@ export const DEFAULT_SETTINGS: TerminalPluginSettings = {
   startupCommand: "",
   fontSize: 14,
   fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+  lineHeight: 1.0,
   theme: "obsidian-dark",
   backgroundColor: "",
   cursorBlink: true,
@@ -443,6 +445,21 @@ export class TerminalSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.fontFamily = value;
             await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Line height")
+      .setDesc("Terminal line height multiplier (default 1.0)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(1.0, 2.0, 0.05)
+          .setValue(this.plugin.settings.lineHeight)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.lineHeight = Math.round(value * 100) / 100;
+            await this.plugin.saveSettings();
+            this.plugin.updateLineHeight();
           })
       );
 
