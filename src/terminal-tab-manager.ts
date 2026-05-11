@@ -456,7 +456,7 @@ export class TerminalTabManager {
         while ((match = re.exec(text)) !== null) {
           const name = match[1];
           const start = match.index + 1;
-          const end = match.index + match[0].length;
+          const end = match.index + match[0].length + 1;
           links.push({
             range: {
               start: { x: start, y: lineNumber },
