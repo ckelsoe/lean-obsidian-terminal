@@ -23,7 +23,6 @@ export class BinaryManager {
   private manifestPath: string;
   private readonly fs: typeof import("fs");
   private readonly path: typeof import("path");
-  private readonly os: typeof import("os");
   private readonly childProcess: typeof import("child_process");
   private readonly crypto: typeof import("crypto");
 
@@ -31,7 +30,6 @@ export class BinaryManager {
     this.pluginDir = pluginDir;
     this.fs = window.require("fs") as typeof import("fs");
     this.path = window.require("path") as typeof import("path");
-    this.os = window.require("os") as typeof import("os");
     this.childProcess = window.require("child_process") as typeof import("child_process");
     this.crypto = window.require("crypto") as typeof import("crypto");
 
@@ -136,7 +134,7 @@ export class BinaryManager {
 
       // Write zip to temp file
       this.setStatus("downloading", "Extracting...");
-      const tmpDir = this.os.tmpdir();
+      const tmpDir = process.env.TMPDIR ?? process.env.TEMP ?? process.env.TMP ?? this.path.join(this.pluginDir, "tmp");
       const tmpZip = this.path.join(tmpDir, assetName);
       this.fs.writeFileSync(tmpZip, zipBuffer);
 
