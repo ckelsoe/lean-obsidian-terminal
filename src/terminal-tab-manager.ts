@@ -931,7 +931,11 @@ export class TerminalTabManager {
   }
 
   focusActive(): void {
-    this.getActiveSession()?.terminal.focus();
+    const session = this.getActiveSession();
+    if (session) {
+      session.containerEl.focus();
+      session.terminal.focus();
+    }
   }
 
   getActiveSession(): TerminalSession | null {
