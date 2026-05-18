@@ -24,6 +24,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 - Clickable URLs in terminal output
 - Auto-resize as the panel resizes
 - Shift+Enter inserts a newline without submitting (muscle memory for Claude Code users)
+- **Note:** Fullscreen mode in detached windows is not supported — terminal content will not reflow to the new width until a command is executed
 
 ### Tab Management
 

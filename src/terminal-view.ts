@@ -88,7 +88,9 @@ export class TerminalView extends ItemView {
       this.tabManager.createTab();
     }
 
-    // Resize observer for auto-fit
+    // Resize observer for auto-fit. Note: fullscreen mode in detached windows does not
+    // trigger proper resize handling — content will not reflow until a command is executed.
+    // This is a limitation of how Obsidian handles detached window events with xterm.js.
     this.resizeObserver = new ResizeObserver(() => {
       if (this.resizeTimer) window.clearTimeout(this.resizeTimer);
       this.resizeTimer = window.setTimeout(() => {
