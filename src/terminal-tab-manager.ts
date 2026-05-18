@@ -408,6 +408,7 @@ export class TerminalTabManager {
       fontFamily: this.settings.fontFamily,
       lineHeight: this.settings.lineHeight,
       cursorBlink: this.settings.cursorBlink,
+      cursorStyle: this.settings.cursorStyle,
       scrollback: this.settings.scrollback,
       theme: resolveSessionTheme(
         { color: opts?.color ?? "" },
@@ -605,6 +606,14 @@ export class TerminalTabManager {
       if (s?.autocomplete?.handleKey(e)) return false;
 
       if (e.type !== "keydown") return true;
+
+      // Stop Escape from bubbling to Obsidian's document handlers (modal dismiss etc.)
+      // xterm still sends \x1b to the PTY via its normal processing (return true)
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        return true;
+      }
+
       const mod = e.metaKey || e.ctrlKey;
 
       // Search shortcut
@@ -919,6 +928,10 @@ export class TerminalTabManager {
     } catch {
       // ignore
     }
+  }
+
+  focusActive(): void {
+    this.getActiveSession()?.terminal.focus();
   }
 
   getActiveSession(): TerminalSession | null {

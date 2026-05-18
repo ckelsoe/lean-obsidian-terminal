@@ -93,9 +93,19 @@ export class TerminalView extends ItemView {
       if (this.resizeTimer) window.clearTimeout(this.resizeTimer);
       this.resizeTimer = window.setTimeout(() => {
         this.tabManager?.fitActive();
+        this.tabManager?.focusActive();
       }, 50);
     });
     this.resizeObserver.observe(terminalHostEl);
+
+    // Restore focus when this leaf becomes active (e.g. switching from another detached window)
+    this.registerEvent(
+      this.app.workspace.on('active-leaf-change', (leaf) => {
+        if (leaf === this.leaf) {
+          this.tabManager?.focusActive();
+        }
+      })
+    );
 
     // Periodic save: every 10s, if terminal output happened since the last check,
     // trigger requestSaveLayout. This replaces per-chunk save calls that caused
