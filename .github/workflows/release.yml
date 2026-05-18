@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 permissions:
   contents: write
@@ -51,9 +52,19 @@ jobs:
         with:
           merge-multiple: true
 
+      - name: Detect pre-release
+        id: flags
+        run: |
+          if [[ "${{ github.ref_name }}" == *-beta* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          prerelease: ${{ steps.flags.outputs.prerelease == 'true' }}
           files: |
             main.js
             manifest.json
