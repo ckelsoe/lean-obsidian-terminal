@@ -921,6 +921,10 @@ export class TerminalTabManager {
     }
   }
 
+  focusActive(): void {
+    this.getActiveSession()?.terminal.focus();
+  }
+
   getActiveSession(): TerminalSession | null {
     return this.sessions.find((s) => s.id === this.activeId) || null;
   }
