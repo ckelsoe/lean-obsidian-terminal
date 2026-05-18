@@ -94,7 +94,7 @@ export class TerminalView extends ItemView {
       this.resizeTimer = window.setTimeout(() => {
         this.tabManager?.fitActive();
         this.tabManager?.focusActive();
-      }, 50);
+      }, 200);
     });
     this.resizeObserver.observe(terminalHostEl);
 
