@@ -90,11 +90,8 @@ export class TerminalView extends ItemView {
 
     // Resize observer for auto-fit
     this.resizeObserver = new ResizeObserver(() => {
-      if (this.resizeTimer) window.clearTimeout(this.resizeTimer);
-      this.resizeTimer = window.setTimeout(() => {
-        this.tabManager?.fitActive();
-        this.tabManager?.focusActive();
-      }, 500);
+      this.tabManager?.fitActive();
+      this.tabManager?.focusActive();
     });
     this.resizeObserver.observe(terminalHostEl);
 
