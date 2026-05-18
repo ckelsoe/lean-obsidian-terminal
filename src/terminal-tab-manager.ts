@@ -408,6 +408,7 @@ export class TerminalTabManager {
       fontFamily: this.settings.fontFamily,
       lineHeight: this.settings.lineHeight,
       cursorBlink: this.settings.cursorBlink,
+      cursorStyle: this.settings.cursorStyle,
       scrollback: this.settings.scrollback,
       theme: resolveSessionTheme(
         { color: opts?.color ?? "" },

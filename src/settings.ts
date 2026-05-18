@@ -19,6 +19,8 @@ export type NotificationSound = "beep" | "chime" | "ping" | "pop";
  */
 export type WikiLinkInsertMode = "wikilink" | "vault-path" | "absolute-path";
 
+export type CursorStyle = "block" | "bar" | "underline";
+
 export interface TerminalPluginSettings {
   shellPath: string;
   startupCommand: string;
@@ -28,6 +30,7 @@ export interface TerminalPluginSettings {
   theme: string;
   backgroundColor: string;
   cursorBlink: boolean;
+  cursorStyle: CursorStyle;
   copyOnSelect: boolean;
   scrollback: number;
   ribbonIcon: string;
@@ -62,6 +65,7 @@ export const DEFAULT_SETTINGS: TerminalPluginSettings = {
   theme: "obsidian-dark",
   backgroundColor: "",
   cursorBlink: true,
+  cursorStyle: "block",
   copyOnSelect: false,
   scrollback: 5000,
   ribbonIcon: "terminal",
@@ -503,6 +507,20 @@ export class TerminalSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
+
+    new Setting(containerEl)
+      .setName("Cursor style")
+      .setDesc("Shape of the terminal cursor. Applies to newly opened tabs.")
+      .addDropdown((dropdown) => {
+        dropdown.addOption("block", "Block");
+        dropdown.addOption("bar", "Bar ( | )");
+        dropdown.addOption("underline", "Underline ( _ )");
+        dropdown.setValue(this.plugin.settings.cursorStyle);
+        dropdown.onChange(async (value: string) => {
+          this.plugin.settings.cursorStyle = value as CursorStyle;
+          await this.plugin.saveSettings();
+        });
+      });
 
     const bgSetting = new Setting(containerEl)
       .setName("Background color")
