@@ -2,6 +2,21 @@
 
 All notable changes to Lean Obsidian Terminal are documented here.
 
+## 1.1.1 - May 18, 2026
+
+### New
+
+- feat: Cursor style setting — choose block, bar, or underline cursor; applies to newly opened tabs (#66)
+
+### Fixed
+
+- fix: Escape key is now captured by the terminal and no longer propagates to Obsidian handlers (#68)
+- fix: Terminal focus restored when switching back to a detached window (#65)
+
+### Known Limitations
+
+- Fullscreen mode in detached windows does not reflow terminal content until a command is executed (xterm.js / Obsidian detached window limitation)
+
 ## 1.1.0 - May 15, 2026
 
 ### New

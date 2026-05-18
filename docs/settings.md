@@ -9,6 +9,7 @@
 | Theme | Obsidian Dark | Color theme for the terminal |
 | Icon | terminal | Lucide icon name for the ribbon and panel tab icon |
 | Cursor blink | On | Whether the cursor blinks |
+| Cursor style | block | Terminal cursor shape: block, bar, or underline. Applies to newly opened tabs |
 | Scrollback | 5000 | Number of lines kept in scroll history |
 | Background color | Theme default | Override the theme background with any CSS color (hex, RGB, etc.) |
 | Default location | Bottom | Where new terminal panels open (Bottom or Right) |

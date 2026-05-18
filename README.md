@@ -49,7 +49,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 - 12 built-in color themes (Obsidian Dark, Obsidian Light, Monokai, Solarized Dark, and more); extend or override via themes.json
 - Custom background color override with color picker (match your vault theme)
 - Customizable ribbon and panel tab icon (any Lucide icon name)
-- Configurable: shell path, font size, font family, cursor blink, scrollback, panel location
+- Configurable: shell path, font size, font family, cursor style (block/bar/underline), cursor blink, scrollback, panel location
 
 ### Sessions & Persistence
 
