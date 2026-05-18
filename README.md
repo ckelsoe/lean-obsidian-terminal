@@ -6,7 +6,7 @@
 [![Closed](https://img.shields.io/github/issues-closed/sdkasper/lean-obsidian-terminal?logo=obsidian&logoColor=A991D4&style=flat-square&labelColor=000000&color=18BC9C)](https://github.com/sdkasper/lean-obsidian-terminal/issues?q=is%3Aissue+is%3Aclosed)
 [![Downloads](https://img.shields.io/github/downloads/sdkasper/lean-obsidian-terminal/total?logo=obsidian&logoColor=A991D4&style=flat-square&labelColor=000000&color=25D0F7)](https://github.com/sdkasper/lean-obsidian-terminal/releases)
 [![Stars](https://img.shields.io/github/stars/sdkasper/lean-obsidian-terminal?logo=obsidian&logoColor=A991D4&style=flat-square&labelColor=000000&color=000000)](https://github.com/sdkasper/lean-obsidian-terminal/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-007BFF?style=flat-square&labelColor=000000)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-007BFF?style=flat-square&labelColor=000000)](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&labelColor=000000&logo=discord&logoColor=5865F2)](https://discord.gg/sbMg6PP2vq)
 
 An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xterm.js](https://xtermjs.org/) and [node-pty](https://github.com/nicedoc/node-pty). Run shell commands directly inside your vault workspace - no external windows needed.
@@ -24,6 +24,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 - Clickable URLs in terminal output
 - Auto-resize as the panel resizes
 - Shift+Enter inserts a newline without submitting (muscle memory for Claude Code users)
+- **Note:** Fullscreen mode in detached windows is not supported — terminal content will not reflow to the new width until a command is executed
 
 ### Tab Management
 
@@ -108,21 +109,21 @@ On Windows, the plugin uses the ConPTY backend (correct UTF-8 and emoji support)
 
 ## Related documents
 
-See [Usage](docs/usage.md) for the full command reference.
+See [Usage](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/usage.md) for the full command reference.
 
-See [Settings](docs/settings.md) for all configuration options.
+See [Settings](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/settings.md) for all configuration options.
 
-See [Session Persistence](docs/session-persistence.md) for how tab state is saved and restored.
+See [Session Persistence](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/session-persistence.md) for how tab state is saved and restored.
 
-See [Claude Code Integration](docs/claude-code-integration.md) for setup and usage.
+See [Claude Code Integration](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/claude-code-integration.md) for setup and usage.
 
-See [URI Handler](docs/uri-handler.md) for the `obsidian://lean-terminal` protocol reference.
+See [URI Handler](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/uri-handler.md) for the `obsidian://lean-terminal` protocol reference.
 
-See [Security](docs/security.md) for the security review summary.
+See [Security](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/docs/security.md) for the security review summary.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for release history and feature documentation by version.
+See [CHANGELOG.md](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/CHANGELOG.md) for release history and feature documentation by version.
 
 ## Feedback
 
@@ -156,4 +157,4 @@ This plugin is built and maintained by a dedicated community. Special thanks to:
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/sdkasper/lean-obsidian-terminal/blob/master/LICENSE)

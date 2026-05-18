@@ -88,14 +88,29 @@ export class TerminalView extends ItemView {
       this.tabManager.createTab();
     }
 
-    // Resize observer for auto-fit
+    // Resize observer for auto-fit. Note: fullscreen mode in detached windows does not
+    // trigger proper resize handling — content will not reflow until a command is executed.
+    // This is a limitation of how Obsidian handles detached window events with xterm.js.
     this.resizeObserver = new ResizeObserver(() => {
       if (this.resizeTimer) window.clearTimeout(this.resizeTimer);
       this.resizeTimer = window.setTimeout(() => {
         this.tabManager?.fitActive();
+        // Only restore focus if this leaf is active; prevent stealing focus during unrelated pane resizes
+        if (this.app.workspace.activeLeaf === this.leaf) {
+          this.tabManager?.focusActive();
+        }
       }, 50);
     });
     this.resizeObserver.observe(terminalHostEl);
+
+    // Restore focus when this leaf becomes active (e.g. switching from another detached window)
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", (leaf) => {
+        if (!leaf || leaf !== this.leaf) return;
+        // Defer so Obsidian's own leaf-switch focus logic completes first (prevents racing command palette)
+        window.setTimeout(() => this.tabManager?.focusActive(), 0);
+      })
+    );
 
     // Periodic save: every 10s, if terminal output happened since the last check,
     // trigger requestSaveLayout. This replaces per-chunk save calls that caused
