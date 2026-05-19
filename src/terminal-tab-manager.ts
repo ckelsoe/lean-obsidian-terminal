@@ -931,6 +931,7 @@ export class TerminalTabManager {
   }
 
   focusActive(): void {
+    if (activeDocument.querySelector(".terminal-tab-rename-input")) return;
     this.getActiveSession()?.terminal.focus();
   }
 
