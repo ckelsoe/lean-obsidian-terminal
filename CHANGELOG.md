@@ -2,6 +2,12 @@
 
 All notable changes to Lean Obsidian Terminal are documented here.
 
+## 1.1.2 - May 19, 2026
+
+### Fixed
+
+- fix: Tab rename input no longer dismissed when resizing panes or switching leaves while editing (#72)
+
 ## 1.1.1 - May 18, 2026
 
 ### New
