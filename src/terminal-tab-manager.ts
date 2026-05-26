@@ -178,7 +178,10 @@ function playNotificationSound(sound: NotificationSound, volume: number): void {
 const ESC = "\x1b";
 
 function resolveTerminalTheme(settings: TerminalPluginSettings, registry: ThemeRegistry) {
-  const theme = registry.get(settings.theme);
+  const themeName = settings.theme === "auto"
+    ? (isObsidianDark() ? "obsidian-dark" : "obsidian-light")
+    : settings.theme;
+  const theme = registry.get(themeName);
   if (settings.backgroundColor) {
     theme.background = settings.backgroundColor;
   }
