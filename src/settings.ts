@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: TerminalPluginSettings = {
   fontSize: 14,
   fontFamily: "Menlo, Monaco, 'Courier New', monospace",
   lineHeight: 1.0,
-  theme: "obsidian-dark",
+  theme: "auto",
   backgroundColor: "",
   cursorBlink: true,
   cursorStyle: "block",
@@ -578,6 +578,7 @@ export class TerminalSettingTab extends PluginSettingTab {
 
     themeSetting.addDropdown((dropdown) => {
       themeDropdown = dropdown;
+      dropdown.addOption("auto", "Auto (follow Obsidian)");
       for (const name of this.plugin.themeRegistry.getNames()) {
         dropdown.addOption(name, name);
       }
@@ -620,7 +621,7 @@ export class TerminalSettingTab extends PluginSettingTab {
 
             const current = this.plugin.settings.theme;
             const available = this.plugin.themeRegistry.getNames();
-            if (available.includes(current)) {
+            if (current === "auto" || available.includes(current)) {
               themeDropdown.setValue(current);
             } else {
               this.plugin.settings.theme = "obsidian-dark";
