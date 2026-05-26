@@ -39,10 +39,15 @@ function loadNodePty(pluginDir: string): NodePtyModule {
 
 function getDefaultShell(): string {
   if (Platform.isWin) {
-    const pwsh = process.env.ProgramFiles + "\\PowerShell\\7\\pwsh.exe";
+    const pwshPaths = [
+      process.env.ProgramFiles + "\\PowerShell\\7\\pwsh.exe",                    // standard installer
+      (process.env.LOCALAPPDATA || "") + "\\Microsoft\\WindowsApps\\pwsh.exe",   // MS Store
+    ];
     try {
       const fs = window.require("fs") as typeof import("fs");
-      if (fs.existsSync(pwsh)) return pwsh;
+      for (const p of pwshPaths) {
+        if (p && fs.existsSync(p)) return p;
+      }
     } catch {
       // ignore
     }
