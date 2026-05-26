@@ -12,6 +12,7 @@ import { mixHex } from "./color-utils";
 import { findTabColor, DEFAULT_TINT_STRENGTH, MAX_TINT_STRENGTH } from "./tab-colors";
 import { ThemeRegistry } from "./theme-registry";
 import type { TerminalPluginSettings, NotificationSound } from "./settings";
+import { resolveShellPath } from "./settings";
 import type { BinaryManager } from "./binary-manager";
 import type { SavedTab } from "./session-state";
 import { WikiLinkAutocomplete, type AutocompleteEntry } from "./wikilink-autocomplete";
@@ -724,7 +725,7 @@ export class TerminalTabManager {
       }
 
       try {
-        pty.spawn(this.settings.shellPath, sessionCwd, cols, rows);
+        pty.spawn(resolveShellPath(this.settings), sessionCwd, cols, rows);
       } catch (err) {
         const message = err instanceof Error ? err.message : "unknown error";
         console.error("Terminal: failed to spawn shell", err);

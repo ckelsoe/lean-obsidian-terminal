@@ -1,4 +1,4 @@
-import { App, ColorComponent, DropdownComponent, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, ColorComponent, DropdownComponent, Notice, Platform, PluginSettingTab, Setting, setIcon } from "obsidian";
 import type TerminalPlugin from "./main";
 import type { RecentSession, SavedViewState } from "./session-state";
 import {
@@ -22,7 +22,10 @@ export type WikiLinkInsertMode = "wikilink" | "vault-path" | "absolute-path";
 export type CursorStyle = "block" | "bar" | "underline";
 
 export interface TerminalPluginSettings {
-  shellPath: string;
+  shellPath: string;      // legacy — kept for migration, not surfaced in UI
+  shellPathWin: string;
+  shellPathMac: string;
+  shellPathLinux: string;
   startupCommand: string;
   fontSize: number;
   fontFamily: string;
@@ -58,6 +61,9 @@ export interface TerminalPluginSettings {
 
 export const DEFAULT_SETTINGS: TerminalPluginSettings = {
   shellPath: "",
+  shellPathWin: "",
+  shellPathMac: "",
+  shellPathLinux: "",
   startupCommand: "",
   fontSize: 14,
   fontFamily: "Menlo, Monaco, 'Courier New', monospace",
@@ -87,6 +93,12 @@ export const DEFAULT_SETTINGS: TerminalPluginSettings = {
   wikiLinkAutocomplete: false,
   wikiLinkInsertMode: "wikilink",
 };
+
+export function resolveShellPath(settings: TerminalPluginSettings): string {
+  if (Platform.isWin) return settings.shellPathWin || settings.shellPath;
+  if (Platform.isMacOS) return settings.shellPathMac || settings.shellPath;
+  return settings.shellPathLinux || settings.shellPath;
+}
 
 export class TerminalSettingTab extends PluginSettingTab {
   plugin: TerminalPlugin;
@@ -316,14 +328,40 @@ export class TerminalSettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("Behavior").setHeading();
 
     new Setting(containerEl)
-      .setName("Shell path")
-      .setDesc("Leave empty to auto-detect your default shell")
+      .setName("Shell path (Windows)")
+      .setDesc("Leave empty to auto-detect. Separate paths let you switch devices without reconfiguring.")
       .addText((text) =>
         text
           .setPlaceholder("Auto-detect")
-          .setValue(this.plugin.settings.shellPath)
+          .setValue(this.plugin.settings.shellPathWin)
           .onChange(async (value) => {
-            this.plugin.settings.shellPath = value;
+            this.plugin.settings.shellPathWin = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Shell path (macOS)")
+      .setDesc("Leave empty to auto-detect. Separate paths let you switch devices without reconfiguring.")
+      .addText((text) =>
+        text
+          .setPlaceholder("Auto-detect")
+          .setValue(this.plugin.settings.shellPathMac)
+          .onChange(async (value) => {
+            this.plugin.settings.shellPathMac = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Shell path (Linux)")
+      .setDesc("Leave empty to auto-detect. Separate paths let you switch devices without reconfiguring.")
+      .addText((text) =>
+        text
+          .setPlaceholder("Auto-detect")
+          .setValue(this.plugin.settings.shellPathLinux)
+          .onChange(async (value) => {
+            this.plugin.settings.shellPathLinux = value;
             await this.plugin.saveSettings();
           })
       );
