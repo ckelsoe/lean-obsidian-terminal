@@ -56,8 +56,7 @@ export async function scanClaudeProjectSessions(
 
   const indexMap = await readSessionsIndex(projectDir);
 
-  const entries: ClaudeSessionEntry[] = [];
-  for (const file of files) {
+  const settled = await Promise.all(files.map(async (file) => {
     const fullPath = path.join(projectDir, file);
     const sessionId = file.replace(/\.jsonl$/, "");
     const indexed = indexMap.get(sessionId);
@@ -79,11 +78,11 @@ export async function scanClaudeProjectSessions(
           firstPrompt = await readFirstUserPrompt(fullPath);
         }
       } catch {
-        continue; // skip unreadable files
+        return null; // skip unreadable files
       }
     }
 
-    entries.push({
+    return {
       sessionId,
       cwd,
       firstPrompt: cleanPrompt(firstPrompt),
@@ -91,8 +90,9 @@ export async function scanClaudeProjectSessions(
       modified,
       messageCount,
       gitBranch,
-    });
-  }
+    };
+  }));
+  const entries = settled.filter((e): e is ClaudeSessionEntry => e !== null);
 
   entries.sort((a, b) => Date.parse(b.modified) - Date.parse(a.modified));
   return entries.slice(0, max);
@@ -119,23 +119,30 @@ async function readSessionsIndex(projectDir: string): Promise<Map<string, Sessio
 }
 
 /** Read the first user (non-meta) message in a JSONL session file, truncated. */
-export async function readFirstUserPrompt(filePath: string): Promise<string> {
-  const fs = (window.require("fs") as typeof import("fs")).promises;
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    const lines = content.split("\n");
-    for (const line of lines) {
-      if (!line.trim()) continue;
+export function readFirstUserPrompt(filePath: string): Promise<string> {
+  const fs = window.require("fs") as typeof import("fs");
+  const readline = window.require("readline") as typeof import("readline");
+  return new Promise((resolve) => {
+    let found = false;
+    const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
+    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    rl.on("line", (line: string) => {
+      if (found || !line.trim()) return;
       let msg: Record<string, unknown>;
       try {
         msg = JSON.parse(line) as Record<string, unknown>;
       } catch {
-        continue;
+        return;
       }
-      if (msg.type !== "user" || msg.isMeta) continue;
+      if (msg.type !== "user" || msg.isMeta) return;
       const message = msg.message as { content?: unknown } | undefined;
       const msgContent = message?.content;
-      if (typeof msgContent === "string") return truncate(msgContent);
+      if (typeof msgContent === "string") {
+        found = true;
+        stream.destroy();
+        resolve(truncate(msgContent));
+        return;
+      }
       if (Array.isArray(msgContent)) {
         for (const block of msgContent) {
           if (
@@ -143,15 +150,18 @@ export async function readFirstUserPrompt(filePath: string): Promise<string> {
             (block as { type?: unknown }).type === "text" &&
             typeof (block as { text?: unknown }).text === "string"
           ) {
-            return truncate((block as { text: string }).text);
+            found = true;
+            stream.destroy();
+            resolve(truncate((block as { text: string }).text));
+            return;
           }
         }
       }
-    }
-  } catch {
-    // IO error — return empty string
-  }
-  return "";
+    });
+    stream.on("error", () => { if (!found) resolve(""); });
+    rl.on("close", () => { if (!found) resolve(""); });
+    rl.on("error", () => { if (!found) resolve(""); });
+  });
 }
 
 /**
