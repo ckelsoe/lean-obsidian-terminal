@@ -18,7 +18,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 ### Terminal Core
 
 - Full PTY terminal (not a simple command runner) with interactive shell support
-- Auto-detects your shell: PowerShell 7 / Windows PowerShell / cmd.exe on Windows, `$SHELL` on macOS/Linux
+- Auto-detects your shell: PowerShell 7 (including Microsoft Store installs) / Windows PowerShell / cmd.exe on Windows, `$SHELL` on macOS/Linux; execution policy bypass applied automatically so shell-integration scripts are never blocked
 - Startup command: configure a command that runs automatically in every new tab once the shell is ready (e.g. `claude`, `npm run dev`)
 - Clipboard support: Ctrl+V / Cmd+V paste, Ctrl+C / Cmd+C copy (with selection)
 - Clickable URLs in terminal output
@@ -50,7 +50,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 - **Auto theme:** terminal theme automatically follows Obsidian's dark/light mode toggle (new default for fresh installs)
 - Custom background color override with color picker (match your vault theme)
 - Customizable ribbon and panel tab icon (any Lucide icon name)
-- Configurable: shell path, font size, font family, cursor style (block/bar/underline), cursor blink, scrollback, panel location
+- Configurable: per-OS shell path (separate Windows / macOS / Linux settings), font size, font family, cursor style (block/bar/underline), cursor blink, scrollback, panel location
 
 ### Sessions & Persistence
 
