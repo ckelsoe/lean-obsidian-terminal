@@ -47,6 +47,7 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 ### Appearance & Configuration
 
 - 12 built-in color themes (Obsidian Dark, Obsidian Light, Monokai, Solarized Dark, and more); extend or override via themes.json
+- **Auto theme:** terminal theme automatically follows Obsidian's dark/light mode toggle (new default for fresh installs)
 - Custom background color override with color picker (match your vault theme)
 - Customizable ribbon and panel tab icon (any Lucide icon name)
 - Configurable: shell path, font size, font family, cursor style (block/bar/underline), cursor blink, scrollback, panel location

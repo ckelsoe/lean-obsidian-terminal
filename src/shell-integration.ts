@@ -104,7 +104,7 @@ export function getShellIntegration(
       const initPath = ensureScript(scriptDir, "pwsh-init.ps1", PWSH_SCRIPT);
       return {
         env: {},
-        args: ["-NoLogo", "-NoExit", "-File", initPath],
+        args: ["-NoLogo", "-NoExit", "-ExecutionPolicy", "Bypass", "-File", initPath],
       };
     }
     // cmd.exe — no hook support

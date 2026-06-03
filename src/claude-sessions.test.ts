@@ -3,10 +3,13 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { writeFile, unlink } from "fs/promises";
 import * as nodeFs from "fs";
+import * as nodeReadline from "readline";
 
-// readFirstUserPrompt uses window.require("fs") — stub it to Node's fs module.
+// readFirstUserPrompt uses window.require("fs") and window.require("readline") — stub both.
 beforeAll(() => {
-  vi.stubGlobal("window", { require: (_mod: string) => nodeFs });
+  vi.stubGlobal("window", {
+    require: (mod: string) => mod === "readline" ? nodeReadline : nodeFs,
+  });
 });
 
 afterAll(() => {
