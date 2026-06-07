@@ -1,4 +1,4 @@
-import { Notice, App, FileSystemAdapter } from "obsidian";
+import { Notice, App, FileSystemAdapter, TFile } from "obsidian";
 import type { AppWithDrag, ElectronWithWebUtils, FileWithPath } from "./obsidian-internals";
 import { Terminal, type ILink } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -257,6 +257,85 @@ function extractDropPath(e: DragEvent, app: App): string | null {
   return null;
 }
 
+/** Trailing characters that are usually prose punctuation, not part of a path. */
+const PATH_TRAILING_PUNCTUATION = /[.,;:!?)\]}>'"]+$/;
+
+/**
+ * Find path-like tokens on a line: single/double-quoted strings, or unquoted
+ * runs containing a slash. Each result carries the 0-based column span of the
+ * path itself (surrounding quotes excluded) so a link range can be built.
+ */
+function findPathCandidates(text: string): { value: string; start: number; end: number }[] {
+  const results: { value: string; start: number; end: number }[] = [];
+  // 1: 'quoted'  2: "quoted"  3: unquoted path with a slash  4: bare filename.ext
+  const re =
+    /'([^']+)'|"([^"]+)"|([^\s"'`()<>]*\/[^\s"'`()<>]+)|([^\s"'`()<>/]+\.[A-Za-z0-9]{1,8})/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    const quoted = match[1] ?? match[2];
+    if (quoted !== undefined) {
+      const start = match.index + 1; // skip the opening quote
+      results.push({ value: quoted, start, end: start + quoted.length });
+      continue;
+    }
+    const trimmed = (match[3] ?? match[4]).replace(PATH_TRAILING_PUNCTUATION, "");
+    if (trimmed.length === 0) continue;
+    results.push({ value: trimmed, start: match.index, end: match.index + trimmed.length });
+  }
+  return results;
+}
+
+/** A resolved path either opens inside the vault or in the system default app. */
+type PathTarget =
+  | { kind: "vault"; linkpath: string }
+  | { kind: "external"; absPath: string };
+
+/** True if the absolute path exists and is a regular file. */
+function isExistingFile(absPath: string): boolean {
+  try {
+    const fs = window.require("fs") as { statSync(p: string): { isFile(): boolean } };
+    return fs.statSync(absPath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolve a path candidate to an open target, or null if it is not a real file.
+ * Vault files (relative, bare name, or absolute-inside-vault) open in Obsidian;
+ * absolute paths outside the vault open in the system default application.
+ */
+function resolvePathTarget(candidate: string, app: App): PathTarget | null {
+  let abs: string | null = null;
+  if (candidate.startsWith("/")) {
+    abs = candidate;
+  } else if (candidate.startsWith("~/")) {
+    const os = window.require("os") as { homedir(): string };
+    abs = os.homedir() + candidate.slice(1);
+  }
+
+  if (abs !== null) {
+    const adapter = app.vault.adapter;
+    if (adapter instanceof FileSystemAdapter) {
+      const base = adapter.getBasePath().split("\\").join("/");
+      const absFwd = abs.split("\\").join("/");
+      if (absFwd.startsWith(base + "/")) {
+        const rel = absFwd.slice(base.length + 1);
+        return app.vault.getAbstractFileByPath(rel) instanceof TFile
+          ? { kind: "vault", linkpath: rel }
+          : null;
+      }
+    }
+    return isExistingFile(abs) ? { kind: "external", absPath: abs } : null;
+  }
+
+  const file = app.vault.getAbstractFileByPath(candidate);
+  if (file instanceof TFile) return { kind: "vault", linkpath: candidate };
+  // Bare names (e.g. CLAUDE.md) resolve the way Obsidian wiki-links do.
+  const dest = app.metadataCache.getFirstLinkpathDest(candidate, "");
+  return dest ? { kind: "vault", linkpath: dest.path } : null;
+}
+
 export interface TabManagerOptions {
   app: App;
   tabBarEl: HTMLElement;
@@ -477,6 +556,41 @@ export class TerminalTabManager {
               void shell.openExternal(
                 `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(name)}`
               );
+            },
+          });
+        }
+        callback(links);
+      },
+    });
+
+    // Bare file paths open in Obsidian (vault files) or the system app (external).
+    terminal.registerLinkProvider({
+      provideLinks: (lineNumber: number, callback: (links: ILink[] | undefined) => void) => {
+        const line = terminal.buffer.active.getLine(lineNumber - 1);
+        if (!line) { callback([]); return; }
+        const text = line.translateToString(true);
+        const links: ILink[] = [];
+        for (const candidate of findPathCandidates(text)) {
+          const target = resolvePathTarget(candidate.value, this.app);
+          if (!target) continue;
+          links.push({
+            range: {
+              start: { x: candidate.start + 1, y: lineNumber },
+              end: { x: candidate.end + 1, y: lineNumber },
+            },
+            text: candidate.value,
+            decorations: { pointerCursor: true, underline: true },
+            activate: (event: MouseEvent) => {
+              if (target.kind === "vault") {
+                // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
+                const newLeaf = event.metaKey || event.ctrlKey ? "tab" : false;
+                void this.app.workspace.openLinkText(target.linkpath, "", newLeaf);
+              } else {
+                const { shell } = window.require("electron") as {
+                  shell: { openPath: (p: string) => Promise<string> };
+                };
+                void shell.openPath(target.absPath);
+              }
             },
           });
         }
