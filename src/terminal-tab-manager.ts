@@ -559,14 +559,10 @@ export class TerminalTabManager {
             },
             text: match[0],
             decorations: { pointerCursor: true, underline: true },
-            activate: () => {
-              const vault = this.app.vault.getName();
-              const { shell } = window.require("electron") as {
-                shell: { openExternal: (url: string) => Promise<void> };
-              };
-              void shell.openExternal(
-                `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(name)}`
-              );
+            activate: (event: MouseEvent) => {
+              // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
+              const newLeaf = event.metaKey || event.ctrlKey ? "tab" : false;
+              void this.app.workspace.openLinkText(name, "", newLeaf);
             },
           });
         }
