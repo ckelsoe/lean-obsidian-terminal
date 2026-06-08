@@ -239,10 +239,16 @@ function bracketedPaste(text: string): string {
   return `\x1b[200~${text}\x1b[201~`;
 }
 
+/** Monotonic counter so rapid pastes in the same millisecond get unique names. */
+let pasteImageCounter = 0;
+
 /**
  * If the OS clipboard holds an image, persist it to a temp PNG and write the
  * path to the PTY as a bracketed paste so the running app attaches it.
  * Returns true when an image was handled, false to fall through to text paste.
+ *
+ * The temp file is deleted after a short delay: the receiving app reads the
+ * image as soon as the path is pasted, so it is no longer needed afterwards.
  */
 function pasteClipboardImage(pty: PtyManager): boolean {
   try {
@@ -250,13 +256,21 @@ function pasteClipboardImage(pty: PtyManager): boolean {
     const image = clipboard.readImage();
     if (!image || image.isEmpty()) return false;
     const os = window.require("os") as { tmpdir(): string };
-    const fs = window.require("fs") as { writeFileSync(p: string, d: Buffer): void };
+    const fs = window.require("fs") as {
+      writeFileSync(p: string, d: Buffer): void;
+      unlinkSync(p: string): void;
+    };
     const path = window.require("path") as { join(...p: string[]): string };
-    const file = path.join(os.tmpdir(), `lean-terminal-paste-${Date.now()}.png`);
+    const name = `lean-terminal-paste-${Date.now()}-${pasteImageCounter++}.png`;
+    const file = path.join(os.tmpdir(), name);
     fs.writeFileSync(file, image.toPNG());
     pty.write(bracketedPaste(file));
+    window.setTimeout(() => {
+      try { fs.unlinkSync(file); } catch { /* already gone */ }
+    }, 10000);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn("[lean-terminal] Image paste failed:", err);
     return false;
   }
 }
