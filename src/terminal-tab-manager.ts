@@ -561,8 +561,12 @@ export class TerminalTabManager {
             decorations: { pointerCursor: true, underline: true },
             activate: (event: MouseEvent) => {
               // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
-              const newLeaf = event.metaKey || event.ctrlKey ? "tab" : false;
-              void this.app.workspace.openLinkText(name, "", newLeaf);
+              const dest = this.app.metadataCache.getFirstLinkpathDest(name, "");
+              if ((event.metaKey || event.ctrlKey) && dest) {
+                void this.app.workspace.getLeaf("tab").openFile(dest);
+              } else {
+                void this.app.workspace.openLinkText(name, "", false);
+              }
             },
           });
         }
@@ -590,8 +594,12 @@ export class TerminalTabManager {
             activate: (event: MouseEvent) => {
               if (target.kind === "vault") {
                 // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
-                const newLeaf = event.metaKey || event.ctrlKey ? "tab" : false;
-                void this.app.workspace.openLinkText(target.linkpath, "", newLeaf);
+                const dest = this.app.vault.getAbstractFileByPath(target.linkpath);
+                if ((event.metaKey || event.ctrlKey) && dest instanceof TFile) {
+                  void this.app.workspace.getLeaf("tab").openFile(dest);
+                } else {
+                  void this.app.workspace.openLinkText(target.linkpath, "", false);
+                }
               } else {
                 const { shell } = window.require("electron") as {
                   shell: { openPath: (p: string) => Promise<string> };
