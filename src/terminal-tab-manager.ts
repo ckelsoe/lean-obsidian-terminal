@@ -560,13 +560,10 @@ export class TerminalTabManager {
             text: match[0],
             decorations: { pointerCursor: true, underline: true },
             activate: (event: MouseEvent) => {
-              // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
-              const dest = this.app.metadataCache.getFirstLinkpathDest(name, "");
-              if ((event.metaKey || event.ctrlKey) && dest) {
-                void this.app.workspace.getLeaf("tab").openFile(dest);
-              } else {
-                void this.app.workspace.openLinkText(name, "", false);
-              }
+              // Cmd/Ctrl+click: open a fresh tab first, then resolve the link
+              // into it via openLinkText (which handles wiki-link resolution).
+              if (event.metaKey || event.ctrlKey) this.app.workspace.getLeaf("tab");
+              void this.app.workspace.openLinkText(name, "", false);
             },
           });
         }
