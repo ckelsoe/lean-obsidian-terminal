@@ -262,14 +262,15 @@ const PATH_TRAILING_PUNCTUATION = /[.,;:!?)\]}>'"]+$/;
 
 /**
  * Find path-like tokens on a line: single/double-quoted strings, or unquoted
- * runs containing a slash. Each result carries the 0-based column span of the
- * path itself (surrounding quotes excluded) so a link range can be built.
+ * runs containing a slash (forward or back, for Windows paths). Each result
+ * carries the 0-based column span of the path itself (surrounding quotes
+ * excluded) so a link range can be built.
  */
 function findPathCandidates(text: string): { value: string; start: number; end: number }[] {
   const results: { value: string; start: number; end: number }[] = [];
   // 1: 'quoted'  2: "quoted"  3: unquoted path with a slash  4: bare filename.ext
   const re =
-    /'([^']+)'|"([^"]+)"|([^\s"'`()<>]*\/[^\s"'`()<>]+)|([^\s"'`()<>/]+\.[A-Za-z0-9]{1,8})/g;
+    /'([^']+)'|"([^"]+)"|([^\s"'`()<>]*[\\/][^\s"'`()<>]+)|([^\s"'`()<>\\/]+\.[A-Za-z0-9]+)/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
     const quoted = match[1] ?? match[2];
@@ -290,14 +291,23 @@ type PathTarget =
   | { kind: "vault"; linkpath: string }
   | { kind: "external"; absPath: string };
 
-/** True if the absolute path exists and is a regular file. */
+/** Cache stat results so hovering/redrawing lines does not re-hit the disk. */
+const fileExistsCache = new Map<string, boolean>();
+
+/** True if the absolute path exists and is a regular file (cached). */
 function isExistingFile(absPath: string): boolean {
+  const cached = fileExistsCache.get(absPath);
+  if (cached !== undefined) return cached;
+  let result = false;
   try {
     const fs = window.require("fs") as { statSync(p: string): { isFile(): boolean } };
-    return fs.statSync(absPath).isFile();
+    result = fs.statSync(absPath).isFile();
   } catch {
-    return false;
+    result = false;
   }
+  if (fileExistsCache.size > 1000) fileExistsCache.clear();
+  fileExistsCache.set(absPath, result);
+  return result;
 }
 
 /**
@@ -306,21 +316,22 @@ function isExistingFile(absPath: string): boolean {
  * absolute paths outside the vault open in the system default application.
  */
 function resolvePathTarget(candidate: string, app: App): PathTarget | null {
+  // Normalise backslashes so Windows paths resolve like POSIX ones.
+  const norm = candidate.split("\\").join("/");
   let abs: string | null = null;
-  if (candidate.startsWith("/")) {
-    abs = candidate;
-  } else if (candidate.startsWith("~/")) {
+  if (norm.startsWith("/") || /^[A-Za-z]:\//.test(norm)) {
+    abs = norm; // POSIX or Windows drive-absolute (e.g. C:/Users/...)
+  } else if (norm.startsWith("~/")) {
     const os = window.require("os") as { homedir(): string };
-    abs = os.homedir() + candidate.slice(1);
+    abs = os.homedir().split("\\").join("/") + norm.slice(1);
   }
 
   if (abs !== null) {
     const adapter = app.vault.adapter;
     if (adapter instanceof FileSystemAdapter) {
       const base = adapter.getBasePath().split("\\").join("/");
-      const absFwd = abs.split("\\").join("/");
-      if (absFwd.startsWith(base + "/")) {
-        const rel = absFwd.slice(base.length + 1);
+      if (abs.startsWith(base + "/")) {
+        const rel = abs.slice(base.length + 1);
         return app.vault.getAbstractFileByPath(rel) instanceof TFile
           ? { kind: "vault", linkpath: rel }
           : null;
@@ -329,10 +340,10 @@ function resolvePathTarget(candidate: string, app: App): PathTarget | null {
     return isExistingFile(abs) ? { kind: "external", absPath: abs } : null;
   }
 
-  const file = app.vault.getAbstractFileByPath(candidate);
-  if (file instanceof TFile) return { kind: "vault", linkpath: candidate };
+  const file = app.vault.getAbstractFileByPath(norm);
+  if (file instanceof TFile) return { kind: "vault", linkpath: norm };
   // Bare names (e.g. CLAUDE.md) resolve the way Obsidian wiki-links do.
-  const dest = app.metadataCache.getFirstLinkpathDest(candidate, "");
+  const dest = app.metadataCache.getFirstLinkpathDest(norm, "");
   return dest ? { kind: "vault", linkpath: dest.path } : null;
 }
 
