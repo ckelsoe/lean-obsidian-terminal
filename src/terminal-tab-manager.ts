@@ -1,5 +1,5 @@
 import { Notice, App, FileSystemAdapter } from "obsidian";
-import type { AppWithDrag, ElectronWithWebUtils, FileWithPath } from "./obsidian-internals";
+import type { AppWithDrag, ElectronWithWebUtils, ElectronWithClipboard, FileWithPath } from "./obsidian-internals";
 import { Terminal, type ILink } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -220,6 +220,59 @@ function quotePath(rawPath: string, shellPath: string): string {
     return `'${rawPath}'`;
   }
   return `"${rawPath}"`;
+}
+
+/** Raster image extensions that TUIs such as Claude Code attach as vision input. */
+const IMAGE_PATH_PATTERN = /\.(png|jpe?g|gif|webp|bmp)$/i;
+
+function isImagePath(path: string): boolean {
+  return IMAGE_PATH_PATTERN.test(path);
+}
+
+/**
+ * Wrap text in bracketed-paste markers (ESC[200~ … ESC[201~). A raw `pty.write`
+ * arrives as individually typed characters; CLI apps like Claude Code only treat
+ * an incoming file path as a pasted image attachment when it is delivered as a
+ * single bracketed paste, matching what a real terminal paste sends.
+ */
+function bracketedPaste(text: string): string {
+  return `\x1b[200~${text}\x1b[201~`;
+}
+
+/** Monotonic counter so rapid pastes in the same millisecond get unique names. */
+let pasteImageCounter = 0;
+
+/**
+ * If the OS clipboard holds an image, persist it to a temp PNG and write the
+ * path to the PTY as a bracketed paste so the running app attaches it.
+ * Returns true when an image was handled, false to fall through to text paste.
+ *
+ * The temp file is deleted after a short delay: the receiving app reads the
+ * image as soon as the path is pasted, so it is no longer needed afterwards.
+ */
+function pasteClipboardImage(pty: PtyManager): boolean {
+  try {
+    const { clipboard } = window.require("electron") as ElectronWithClipboard;
+    const image = clipboard.readImage();
+    if (!image || image.isEmpty()) return false;
+    const os = window.require("os") as { tmpdir(): string };
+    const fs = window.require("fs") as {
+      writeFileSync(p: string, d: Buffer): void;
+      unlinkSync(p: string): void;
+    };
+    const path = window.require("path") as { join(...p: string[]): string };
+    const name = `lean-terminal-paste-${Date.now()}-${pasteImageCounter++}.png`;
+    const file = path.join(os.tmpdir(), name);
+    fs.writeFileSync(file, image.toPNG());
+    pty.write(bracketedPaste(file));
+    window.setTimeout(() => {
+      try { fs.unlinkSync(file); } catch { /* already gone */ }
+    }, 10000);
+    return true;
+  } catch (err) {
+    console.warn("[lean-terminal] Image paste failed:", err);
+    return false;
+  }
 }
 
 function extractDropPath(e: DragEvent, app: App): string | null {
@@ -524,7 +577,12 @@ export class TerminalTabManager {
       hideLabel();
       const path = extractDropPath(e, this.app);
       if (!path) return;
-      pty.write(quotePath(path, pty.shellPath));
+      // Dropped images attach as files; other files insert as a quoted path.
+      if (isImagePath(path)) {
+        pty.write(bracketedPaste(path));
+      } else {
+        pty.write(quotePath(path, pty.shellPath));
+      }
     });
 
     return dragLabel;
@@ -639,11 +697,11 @@ export class TerminalTabManager {
       // Paste: Ctrl+V / Cmd+V / Shift+Insert
       if ((mod && e.key === "v") || (e.shiftKey && e.key === "Insert")) {
         e.preventDefault();
+        const s = this.sessions.find((s) => s.id === id);
+        // An image on the clipboard is attached as a file; otherwise paste text.
+        if (s && pasteClipboardImage(s.pty)) return false;
         navigator.clipboard.readText().then((text) => {
-          if (text) {
-            const s = this.sessions.find((s) => s.id === id);
-            if (s) s.pty.write(text);
-          }
+          if (text && s) s.pty.write(text);
         }).catch(() => { /* clipboard unavailable */ });
         return false;
       }
