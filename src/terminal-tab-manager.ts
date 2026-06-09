@@ -266,10 +266,15 @@ function pasteClipboardImage(pty: PtyManager): boolean {
     fs.writeFileSync(file, image.toPNG());
     pty.write(bracketedPaste(file));
     window.setTimeout(() => {
+<<<<<<< HEAD
       try { fs.unlinkSync(file); } catch (e) {
         console.warn("[lean-terminal] temp file cleanup failed:", e);
       }
     }, 30000);
+=======
+      try { fs.unlinkSync(file); } catch { /* already gone */ }
+    }, 10000);
+>>>>>>> origin/master
     return true;
   } catch (err) {
     console.warn("[lean-terminal] Image paste failed:", err);
@@ -712,7 +717,12 @@ export class TerminalTabManager {
       hideLabel();
       const path = extractDropPath(e, this.app);
       if (!path) return;
-      pty.write(quotePath(path, pty.shellPath));
+      // Dropped images attach as files; other files insert as a quoted path.
+      if (isImagePath(path)) {
+        pty.write(bracketedPaste(path));
+      } else {
+        pty.write(quotePath(path, pty.shellPath));
+      }
     });
 
     return dragLabel;
