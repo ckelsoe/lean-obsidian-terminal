@@ -2,11 +2,20 @@
 
 All notable changes to Lean Obsidian Terminal are documented here.
 
-## 1.2.0 - Unreleased
+## 1.3.0 - June 9, 2026
 
 ### New
 
-- feat: Public `registerKeyHandler` API — companion plugins can register key handlers that compose with the built-in autocomplete/search handling, in registration order, without forking (#76)
+- feat: Paste clipboard images directly — Ctrl+V / Cmd+V in the terminal pastes clipboard images as file attachments in Claude Code sessions (#80)
+- feat: Clickable file paths — terminal output file paths (Windows drive letters, vault-relative, quoted) are clickable links to open files in new tabs (#81)
+- feat: Public `registerKeyHandler` API — downstream plugins can register key handlers that compose with built-in autocomplete/search handling, enabling terminal customization without forking (#82)
+
+### Security
+
+- fix: Shell injection vulnerability in `quotePath` — now properly escapes single quotes in POSIX shells and double quotes in Windows shells
+- fix: Unsanitized `resumeCommand` from workspace state — now validates against expected pattern and strips arbitrary commands from corrupted or malicious workspace.json
+- fix: Temp clipboard image files created world-readable — now created with 0o600 (owner-only) permissions
+- fix: Path traversal in Claude session directory scan — now validates claudeSessionsDir is absolute and contains no `..` traversal segments
 
 ## 1.1.2 - May 19, 2026
 

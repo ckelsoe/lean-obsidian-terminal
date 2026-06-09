@@ -218,9 +218,9 @@ function quotePath(rawPath: string, shellPath: string): string {
   if (!rawPath.includes(" ")) return rawPath;
   const lower = shellPath.toLowerCase();
   if (lower.includes("bash") || lower.includes("zsh") || lower.includes("sh")) {
-    return `'${rawPath}'`;
+    return `'${rawPath.replace(/'/g, "'\\''")}'`;
   }
-  return `"${rawPath}"`;
+  return `"${rawPath.replace(/"/g, '\\"')}"`;
 }
 
 /** Raster image extensions that TUIs such as Claude Code attach as vision input. */
@@ -258,13 +258,13 @@ function pasteClipboardImage(pty: PtyManager): boolean {
     if (!image || image.isEmpty()) return false;
     const os = window.require("os") as { tmpdir(): string };
     const fs = window.require("fs") as {
-      writeFileSync(p: string, d: Buffer): void;
+      writeFileSync(p: string, d: Buffer, opts?: { mode?: number }): void;
       unlinkSync(p: string): void;
     };
     const path = window.require("path") as { join(...p: string[]): string };
     const name = `lean-terminal-paste-${Date.now()}-${pasteImageCounter++}.png`;
     const file = path.join(os.tmpdir(), name);
-    fs.writeFileSync(file, image.toPNG());
+    fs.writeFileSync(file, image.toPNG(), { mode: 0o600 });
     pty.write(bracketedPaste(file));
     window.setTimeout(() => {
       try { fs.unlinkSync(file); } catch (e) {

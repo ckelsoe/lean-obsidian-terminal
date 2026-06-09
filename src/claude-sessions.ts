@@ -42,6 +42,10 @@ export async function scanClaudeProjectSessions(
 ): Promise<ClaudeSessionEntry[]> {
   if (!claudeProjectsDir) return [];
   const path = window.require("path") as typeof import("path");
+  if (!path.isAbsolute(claudeProjectsDir) || claudeProjectsDir.split(path.sep).includes("..")) {
+    console.warn("[lean-terminal] claudeProjectsDir is not a safe absolute path:", claudeProjectsDir);
+    return [];
+  }
   const fs = (window.require("fs") as typeof import("fs")).promises;
 
   const encoded = encodeProjectDir(cwd);

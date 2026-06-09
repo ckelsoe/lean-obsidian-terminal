@@ -3,7 +3,7 @@ import { VIEW_TYPE_TERMINAL } from "./constants";
 import { TerminalTabManager, type TabManagerOptions, type CreateTabOpts } from "./terminal-tab-manager";
 import { pushRecentSession } from "./recent-sessions";
 import type TerminalPlugin from "./main";
-import type { SavedViewState } from "./session-state";
+import type { SavedViewState, SavedTab } from "./session-state";
 
 export class TerminalView extends ItemView {
   private plugin: TerminalPlugin;
@@ -220,6 +220,23 @@ export class TerminalView extends ItemView {
   }
 }
 
+// UUID v4 format: validate resumeCommand matches "claude --resume <uuid>" pattern only
+const RESUME_CMD_RE = /^claude --resume [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function sanitizeTab(raw: unknown): SavedTab {
+  const t = (raw && typeof raw === "object" ? raw : {}) as Partial<SavedTab>;
+  return {
+    name: typeof t.name === "string" ? t.name : "Terminal",
+    color: typeof t.color === "string" ? t.color : "",
+    cwd: typeof t.cwd === "string" ? t.cwd : "",
+    bufferSerial: typeof t.bufferSerial === "string" ? t.bufferSerial : undefined,
+    resumeCommand: typeof t.resumeCommand === "string" && RESUME_CMD_RE.test(t.resumeCommand)
+      ? t.resumeCommand
+      : undefined,
+    pinned: typeof t.pinned === "boolean" ? t.pinned : undefined,
+  };
+}
+
 /**
  * Validate and narrow an unknown state value to SavedViewState.
  * Returns null for missing, malformed, or empty state.
@@ -229,5 +246,5 @@ function parseSavedViewState(state: unknown): SavedViewState | null {
   const s = state as Partial<SavedViewState>;
   if (!Array.isArray(s.tabs) || s.tabs.length === 0) return null;
   const activeIndex = typeof s.activeIndex === "number" ? s.activeIndex : 0;
-  return { tabs: s.tabs, activeIndex };
+  return { tabs: s.tabs.map(sanitizeTab), activeIndex };
 }

@@ -36,7 +36,8 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 ### Vault Integration
 
 - Opens in vault root by default; command palette to open in the current file's folder; right-click any file or folder to open a terminal there
-- Drag files from the Obsidian file explorer or Windows Explorer into the terminal to insert the absolute path (spaces auto-quoted)
+- Drag files or images from the Obsidian file explorer or Windows Explorer into the terminal to insert the absolute path (spaces auto-quoted); paste clipboard images directly to attach in Claude Code sessions
+- Clickable file paths: any valid file path in terminal output becomes a clickable link to open the file in a new tab (recognizes Windows drive letters, vault-relative paths, and quoted paths with spaces)
 - Wiki-link autocomplete: type `[[` in the terminal to pick any vault note and insert as a wiki-link, vault-relative path, or absolute path
 
 ### Search & Selection
@@ -58,6 +59,10 @@ An embedded terminal panel for [Obsidian](https://obsidian.md), powered by [xter
 - Rescue recently closed tabs from the command palette (ring buffer of the last 10 sessions)
 - Notification sounds when background tab commands finish (4 sound types, adjustable volume)
 - Optional [Claude Code](https://claude.com/claude-code) integration: auto-maintained session registry with clickable Resume links and URI handler
+
+### Extensibility
+
+- Public `registerKeyHandler()` API: downstream plugins can compose custom key handlers that run before built-in autocomplete/search handling, enabling terminal customization without forking
 
 ## Installation
 
