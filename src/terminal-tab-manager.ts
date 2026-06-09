@@ -267,15 +267,10 @@ function pasteClipboardImage(pty: PtyManager): boolean {
     fs.writeFileSync(file, image.toPNG());
     pty.write(bracketedPaste(file));
     window.setTimeout(() => {
-<<<<<<< HEAD
       try { fs.unlinkSync(file); } catch (e) {
         console.warn("[lean-terminal] temp file cleanup failed:", e);
       }
     }, 30000);
-=======
-      try { fs.unlinkSync(file); } catch { /* already gone */ }
-    }, 10000);
->>>>>>> origin/master
     return true;
   } catch (err) {
     console.warn("[lean-terminal] Image paste failed:", err);
