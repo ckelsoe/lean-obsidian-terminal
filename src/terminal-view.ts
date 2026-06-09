@@ -16,6 +16,8 @@ export class TerminalView extends ItemView {
    * Applied in onOpen() once the manager is ready.
    */
   private pendingState: SavedViewState | null = null;
+  /** Tracks whether this leaf is currently active. */
+  private isActive = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: TerminalPlugin) {
     super(leaf);
@@ -97,7 +99,7 @@ export class TerminalView extends ItemView {
       this.resizeTimer = window.setTimeout(() => {
         this.tabManager?.fitActive();
         // Only restore focus if this leaf is active; prevent stealing focus during unrelated pane resizes
-        if (this.app.workspace.activeLeaf === this.leaf) {
+        if (this.isActive) {
           this.tabManager?.focusActive();
         }
       }, 50);
@@ -107,6 +109,7 @@ export class TerminalView extends ItemView {
     // Restore focus when this leaf becomes active (e.g. switching from another detached window)
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
+        this.isActive = leaf === this.leaf;
         if (!leaf || leaf !== this.leaf) return;
         // Defer so Obsidian's own leaf-switch focus logic completes first (prevents racing command palette)
         window.setTimeout(() => this.tabManager?.focusActive(), 0);
