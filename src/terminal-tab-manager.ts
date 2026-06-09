@@ -266,8 +266,10 @@ function pasteClipboardImage(pty: PtyManager): boolean {
     fs.writeFileSync(file, image.toPNG());
     pty.write(bracketedPaste(file));
     window.setTimeout(() => {
-      try { fs.unlinkSync(file); } catch { /* already gone */ }
-    }, 10000);
+      try { fs.unlinkSync(file); } catch (e) {
+        console.warn("[lean-terminal] temp file cleanup failed:", e);
+      }
+    }, 30000);
     return true;
   } catch (err) {
     console.warn("[lean-terminal] Image paste failed:", err);
@@ -321,18 +323,26 @@ const PATH_TRAILING_PUNCTUATION = /[.,;:!?)\]}>'"]+$/;
  */
 function findPathCandidates(text: string): { value: string; start: number; end: number }[] {
   const results: { value: string; start: number; end: number }[] = [];
-  // 1: 'quoted'  2: "quoted"  3: unquoted path with a slash  4: bare filename.ext
+  // 1: Windows drive-absolute  2: 'quoted'  3: "quoted"  4: unquoted path with a slash  5: bare filename.ext
   const re =
-    /'([^']+)'|"([^"]+)"|([^\s"'`()<>]*[\\/][^\s"'`()<>]+)|([^\s"'`()<>\\/]+\.[A-Za-z0-9]+)/g;
+    /([A-Za-z]:[/\\][^"'`<>|?*\n]+)|'([^']+)'|"([^"]+)"|([^\s"'`()<>]*[\\/][^\s"'`()<>]+)|([^\s"'`()<>\\/]+\.[A-Za-z0-9]+)/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
-    const quoted = match[1] ?? match[2];
+    const driveAbsolute = match[1];
+    if (driveAbsolute !== undefined) {
+      const trimmed = driveAbsolute.replace(PATH_TRAILING_PUNCTUATION, "");
+      if (trimmed.length > 0) {
+        results.push({ value: trimmed, start: match.index, end: match.index + trimmed.length });
+      }
+      continue;
+    }
+    const quoted = match[2] ?? match[3];
     if (quoted !== undefined) {
       const start = match.index + 1; // skip the opening quote
       results.push({ value: quoted, start, end: start + quoted.length });
       continue;
     }
-    const trimmed = (match[3] ?? match[4]).replace(PATH_TRAILING_PUNCTUATION, "");
+    const trimmed = (match[4] ?? match[5]).replace(PATH_TRAILING_PUNCTUATION, "");
     if (trimmed.length === 0) continue;
     results.push({ value: trimmed, start: match.index, end: match.index + trimmed.length });
   }
@@ -641,14 +651,13 @@ export class TerminalTabManager {
             },
             text: candidate.value,
             decorations: { pointerCursor: true, underline: true },
-            activate: (event: MouseEvent) => {
+            activate: (_event: MouseEvent) => {
               if (target.kind === "vault") {
-                // Cmd/Ctrl+click opens in a new tab, like Obsidian's own links.
-                const dest = this.app.vault.getAbstractFileByPath(target.linkpath);
-                if ((event.metaKey || event.ctrlKey) && dest instanceof TFile) {
+                const dest = this.app.metadataCache.getFirstLinkpathDest(target.linkpath, "");
+                if (dest instanceof TFile) {
                   void this.app.workspace.getLeaf("tab").openFile(dest);
                 } else {
-                  void this.app.workspace.openLinkText(target.linkpath, "", false);
+                  void this.app.workspace.openLinkText(target.linkpath, "", true);
                 }
               } else {
                 const { shell } = window.require("electron") as {
@@ -703,12 +712,7 @@ export class TerminalTabManager {
       hideLabel();
       const path = extractDropPath(e, this.app);
       if (!path) return;
-      // Dropped images attach as files; other files insert as a quoted path.
-      if (isImagePath(path)) {
-        pty.write(bracketedPaste(path));
-      } else {
-        pty.write(quotePath(path, pty.shellPath));
-      }
+      pty.write(quotePath(path, pty.shellPath));
     });
 
     return dragLabel;
