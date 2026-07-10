@@ -694,3 +694,8 @@
   color: var(--text-faint);
   font-style: italic;
 }
+
+.lean-terminal-settings-footer {
+  text-align: center;
+  opacity: 0.8;
+}

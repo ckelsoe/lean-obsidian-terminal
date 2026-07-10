@@ -870,5 +870,27 @@ export class TerminalSettingTab extends PluginSettingTab {
     this.renderNotificationsSection(containerEl);
     this.renderPersistenceSection(containerEl);
     this.renderClaudeSection(containerEl);
+    this.renderFooter(new Setting(containerEl).settingEl);
+  }
+
+  // Renders the version + support links footer into a trailing settings row
+  // (matches the obsidian-shell-path-copy reference plugin's settings tab).
+  private renderFooter(el: HTMLElement): void {
+    el.empty();
+    el.addClass("lean-terminal-settings-footer");
+
+    const manifestVersion = this.plugin.manifest.version || "0.0.0";
+    el.createSpan({ text: `Version ${manifestVersion} | ` });
+
+    const createExternalLink = (text: string, url: string): HTMLAnchorElement =>
+      el.createEl("a", {
+        text,
+        href: url,
+        attr: { target: "_blank", rel: "noopener" },
+      });
+
+    createExternalLink("GitHub", "https://github.com/ckelsoe/lean-obsidian-terminal");
+    el.createSpan({ text: " | " });
+    createExternalLink("Report Issues", "https://github.com/ckelsoe/lean-obsidian-terminal/issues");
   }
 }
